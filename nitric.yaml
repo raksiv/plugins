@@ -1,7 +1,7 @@
 targets:
   - file:platform.yaml
-name: storage-compute-app
-description: App with both storage and compute
+name: complete-web-app
+description: Full web application with CDN
 
 services:
   api:
@@ -18,8 +18,24 @@ services:
       script: go run main.go
 
 buckets:
-  files:
+  static:
+    access:
+      api:
+        - read
+
+  uploads:
     access:
       api:
         - read
         - write
+
+entrypoints:
+  web:
+    properties:
+      waf_enabled: true
+      rate_limit_enabled: true
+    routes:
+      /:
+        name: api
+      /api/*:
+        name: api

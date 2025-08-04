@@ -1,8 +1,8 @@
-name: my-storage-compute-platform
-description: Platform with S3 storage and Lambda compute
+name: my-complete-aws-platform
+description: Complete platform with S3, Lambda, and CloudFront
 
 libraries:
-  my-aws: github.com/your-username/my-aws-plugins@v0.2.0
+  my-aws: github.com/your-username/my-aws-plugins@v0.3.0
 
 buckets:
   default:
@@ -14,3 +14,9 @@ services:
     properties:
       memory: 512
       timeout: 30
+
+entrypoints:
+  default:
+    plugin: my-aws/aws-cloudfront
+    properties:
+      waf_enabled: false
