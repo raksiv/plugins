@@ -538,10 +538,7 @@ services:
       script: go run main.go
 
 buckets:
-  static:
-    access:
-      api:
-        - read
+  static: {}
 
   uploads:
     access:
@@ -556,8 +553,8 @@ entrypoints:
       rate_limit_enabled: true
     routes:
       /:
-        name: api
-      /api/*:
+        name: static
+      /api/*/:
         name: api
 ```
 
@@ -597,9 +594,9 @@ entrypoints:
       waf_enabled: true
     routes:
       /:
-        name: api
-      /static/*:
         name: static  # S3 bucket
+      /api/*/:
+        name: api
 ```
 
 Nitric provides rich origin information:
@@ -643,7 +640,7 @@ CloudFront automatically sets up the right permissions for each origin type:
 git add .
 git commit -m "Phase 3: Add CloudFront plugin for complete web platform"
 git tag v0.3.0
-git push origin v0.3.0
+git push origin main --tags
 ```
 
 ## Complete Example: Static Site with API
@@ -671,8 +668,7 @@ services:
 
 buckets:
   # Static website assets
-  website:
-    # No access needed - served directly by CloudFront
+  website: {}
   
   # User uploads
   uploads:
@@ -697,7 +693,7 @@ entrypoints:
       /:
         name: website
       # API calls to Lambda
-      /api/*:
+      /api/*/:
         name: api
 ```
 

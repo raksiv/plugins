@@ -445,7 +445,7 @@ This allows the S3 plugin to create IAM policies for the Lambda's role, granting
 git add .
 git commit -m "Phase 2: Add Lambda plugin for compute"
 git tag v0.2.0
-git push origin v0.2.0
+git push origin main --tags
 ```
 
 ## Key Concepts from Phase 2

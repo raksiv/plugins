@@ -2,7 +2,7 @@ name: my-complete-aws-platform
 description: Complete platform with S3, Lambda, and CloudFront
 
 libraries:
-  my-aws: github.com/your-username/my-aws-plugins@v0.3.0
+  my-aws: github.com/raksiv/plugins@v0.3.0
 
 buckets:
   default:

@@ -1,0 +1,38 @@
+targets:
+  - file:platform.yaml
+name: test-api
+description: Testing AWS plugin library with Go service
+
+services:
+  app:
+    env:
+      API_VERSION: v1
+      NODE_ENV: production
+    container:
+      docker:
+        dockerfile: Dockerfile
+        context: .
+    dev:
+      script: go run main.go
+
+buckets:
+  # Static website files (HTML, CSS, JS)
+  website: {}
+  
+  # File uploads bucket
+  files:
+    access:
+      app:
+        - read
+        - write
+        - delete
+
+entrypoints:
+  ingress:
+    routes:
+      # Static files from S3
+      /:
+        name: website
+      # API calls to Go service  
+      /api/*/:
+        name: app

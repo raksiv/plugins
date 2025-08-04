@@ -223,12 +223,10 @@ description: Testing S3 bucket functionality
 
 buckets:
   # Static website files
-  website:
-    # Uses default plugin from platform.yaml
+  website: {}
 
   # User uploads
-  uploads:
-    # Uses default plugin from platform.yaml
+  uploads: {}
 ```
 
 ## Step 8: Publish Your Plugin
@@ -237,7 +235,7 @@ buckets:
 git add .
 git commit -m "Phase 1: Add S3 bucket plugin"
 git tag v0.1.0
-git push origin v0.1.0
+git push origin main --tags
 ```
 
 ## Understanding What Nitric Injects
