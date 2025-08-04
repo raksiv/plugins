@@ -1,13 +1,25 @@
 targets:
   - file:platform.yaml
-name: s3-test-app
-description: Testing S3 bucket functionality
+name: storage-compute-app
+description: App with both storage and compute
+
+services:
+  api:
+    properties:
+      memory: 1024
+      timeout: 60
+    env:
+      NODE_ENV: production
+    container:
+      docker:
+        dockerfile: Dockerfile
+        context: .
+    dev:
+      script: go run main.go
 
 buckets:
-  # Static website files
-  website:
-    # Uses default plugin from platform.yaml
-
-  # User uploads
-  uploads:
-    # Uses default plugin from platform.yaml
+  files:
+    access:
+      api:
+        - read
+        - write

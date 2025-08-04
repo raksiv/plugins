@@ -1,9 +1,16 @@
-name: my-s3-platform
-description: Simple S3-only platform
+name: my-storage-compute-platform
+description: Platform with S3 storage and Lambda compute
 
 libraries:
-  my-aws: github.com/your-username/my-aws-plugins@v0.1.0
+  my-aws: github.com/your-username/my-aws-plugins@v0.2.0
 
 buckets:
   default:
     plugin: my-aws/aws-s3
+
+services:
+  default:
+    plugin: my-aws/aws-lambda
+    properties:
+      memory: 512
+      timeout: 30
