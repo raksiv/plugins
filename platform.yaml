@@ -1,0 +1,9 @@
+name: my-s3-platform
+description: Simple S3-only platform
+
+libraries:
+  my-aws: github.com/your-username/my-aws-plugins@v0.1.0
+
+buckets:
+  default:
+    plugin: my-aws/aws-s3

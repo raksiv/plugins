@@ -1,0 +1,13 @@
+targets:
+  - file:platform.yaml
+name: s3-test-app
+description: Testing S3 bucket functionality
+
+buckets:
+  # Static website files
+  website:
+    # Uses default plugin from platform.yaml
+
+  # User uploads
+  uploads:
+    # Uses default plugin from platform.yaml

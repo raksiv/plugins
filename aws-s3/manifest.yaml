@@ -1,0 +1,8 @@
+name: "aws-s3"
+type: "resource"
+description: "AWS S3 bucket for object storage"
+deployment:
+  terraform: "module/"
+properties:
+  # You can add custom properties here that will be configurable in platform.yaml
+  # For example: custom_setting, enable_feature, etc.
