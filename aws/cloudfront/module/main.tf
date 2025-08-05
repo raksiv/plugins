@@ -1,13 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-# This shows the composability - CloudFront automatically detects different origin types
 locals {
   s3_origin_id = "publicOrigin"
   default_origin = {
@@ -39,6 +29,8 @@ resource "aws_cloudfront_vpc_origin" "vpc_origin" {
     name = each.key
     arn = each.value.resources["aws_lb"]
     http_port = each.value.resources["aws_lb:http_port"]
+    # Doesn't matter what we set this to, it's not used
+    # But 0 is not a legal value
     https_port = 443
     origin_protocol_policy = "http-only"
 
@@ -53,10 +45,12 @@ data "aws_ec2_managed_prefix_list" "cloudfront" {
  name = "com.amazonaws.global.cloudfront.origin-facing"
 }
 
-# Allow CloudFront to access load balancers
+# Allow the cloudfront instance the ability to access the load balancer
 resource "aws_security_group_rule" "ingress" {
   for_each = local.vpc_origins
+  # FIXME: Only apply to a mutual security that is shared with the ALB
   security_group_id = each.value.resources["aws_lb:security_group"]
+  # self = true
   from_port = each.value.resources["aws_lb:http_port"]
   to_port = each.value.resources["aws_lb:http_port"]
   protocol = "tcp"
@@ -83,7 +77,7 @@ resource "aws_cloudfront_origin_access_control" "s3_oac" {
   signing_protocol                  = "sigv4"
 }
 
-# Allow CloudFront to execute Lambda functions
+# Allow cloudfront to execute the function urls of any provided AWS lambda functions
 resource "aws_lambda_permission" "allow_cloudfront_to_execute_lambda" {
   for_each = local.lambda_origins
 
@@ -93,7 +87,6 @@ resource "aws_lambda_permission" "allow_cloudfront_to_execute_lambda" {
   source_arn = aws_cloudfront_distribution.distribution.arn
 }
 
-# Allow CloudFront to access S3 buckets
 resource "aws_s3_bucket_policy" "allow_bucket_access" {
   for_each = local.s3_bucket_origins
 
@@ -140,7 +133,7 @@ resource "aws_wafv2_web_acl" "cloudfront_waf" {
     allow {}
   }
 
-  # Rate limiting rule
+  # Rate limiting rule for DDoS protection
   dynamic "rule" {
     for_each = var.rate_limit_enabled ? [1] : []
 
@@ -193,7 +186,7 @@ resource "aws_wafv2_web_acl" "cloudfront_waf" {
       }
 
       visibility_config {
-        cloudfront_metrics_enabled = true
+        cloudwatch_metrics_enabled = true
         metric_name                = rule.value.name
         sampled_requests_enabled   = true
       }
@@ -211,11 +204,11 @@ resource "aws_cloudfront_distribution" "distribution" {
   enabled = true
   web_acl_id = var.waf_enabled ? aws_wafv2_web_acl.cloudfront_waf[0].arn : null
 
-  # Non-VPC origins (S3 and Lambda)
   dynamic "origin" {
     for_each = local.non_vpc_origins
 
     content {
+      # TODO: Only have services return their domain name instead? 
       domain_name = origin.value.domain_name
       origin_id = "${origin.key}"
       origin_access_control_id = contains(keys(origin.value.resources), "aws_lambda_function") ? aws_cloudfront_origin_access_control.lambda_oac[0].id : contains(keys(origin.value.resources), "aws_s3_bucket") ? aws_cloudfront_origin_access_control.s3_oac[0].id : null
@@ -235,7 +228,6 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
   }
 
-  # VPC origins (Load Balancers)
   dynamic "origin" {
     for_each = local.vpc_origins
 
@@ -248,7 +240,6 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
   }
 
-  # Cache behaviors for non-root paths
   dynamic "ordered_cache_behavior" {
     for_each = {
       for k, v in var.nitric.origins : k => v
@@ -278,7 +269,6 @@ resource "aws_cloudfront_distribution" "distribution" {
     }
   }
 
-  # Default cache behavior
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods   = ["GET", "HEAD", "OPTIONS"]

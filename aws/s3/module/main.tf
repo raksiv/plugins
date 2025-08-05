@@ -1,35 +1,39 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
+# AWS S3 bucket
 
-# Local variables for processing Nitric injected data
 locals {
   normalized_nitric_name = provider::corefunc::str_kebab(var.nitric.name)
-  relative_content_path = "${path.root}/../../../${var.nitric.content_path}"
-  content_files = var.nitric.content_path != "" ? fileset(local.relative_content_path, "**/*") : []
 }
 
-# Main S3 bucket - name is generated from Nitric stack and resource name
 resource "aws_s3_bucket" "bucket" {
   bucket = "${var.nitric.stack_id}-${local.normalized_nitric_name}"
   tags   = var.tags
 }
 
-# Upload files if content path is provided by Nitric
+locals {
+  read_actions = [
+    "s3:GetObject",
+    "s3:ListBucket",
+  ]
+  write_actions = [
+    "s3:PutObject",
+  ]
+  delete_actions = [
+    "s3:DeleteObject",
+  ]
+  relative_content_path = "${path.root}/../../../${var.nitric.content_path}"
+  content_files = var.nitric.content_path != "" ? fileset(local.relative_content_path, "**/*") : []
+}
+
+# Upload each file to S3 (only if files exist)
 resource "aws_s3_object" "files" {
   for_each = toset(local.content_files)
-
+  
   bucket = aws_s3_bucket.bucket.bucket
   key    = each.value
   source = "${local.relative_content_path}/${each.value}"
-
+  
   etag = filemd5("${local.relative_content_path}/${each.value}")
-
+  
   content_type = lookup({
     "html" = "text/html"
     "css"  = "text/css"
@@ -45,25 +49,15 @@ resource "aws_s3_object" "files" {
   }, reverse(split(".", each.value))[0], "application/octet-stream")
 }
 
-# Automatically create IAM policies for services that need bucket access
-locals {
-  read_actions = [
-    "s3:GetObject",
-    "s3:ListBucket",
-  ]
-  write_actions = [
-    "s3:PutObject",
-  ]
-  delete_actions = [
-    "s3:DeleteObject",
-  ]
-}
 
 resource "aws_iam_role_policy" "access_policy" {
   for_each = var.nitric.services
   name     = "${local.normalized_nitric_name}-${provider::corefunc::str_kebab(each.key)}"
   role     = each.value.identities["aws:iam:role"].role.name
 
+
+  # Terraform's "jsonencode" function converts a
+  # Terraform expression result to valid JSON syntax.
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
